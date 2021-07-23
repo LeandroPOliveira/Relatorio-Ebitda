@@ -7,7 +7,7 @@ desired_width = 320
 pd.set_option('display.width', desired_width)
 pd.set_option('display.max_columns', 10)
 
-
+# formatar relatório SAP com despesas por centro de custo
 def formatar_dados(dados_inicio):
     dados_inicio_1 = pd.DataFrame(dados_inicio)
     dados_inicio_1['Conta do Razão'] = dados_inicio_1['Conta do Razão'].astype(str)
