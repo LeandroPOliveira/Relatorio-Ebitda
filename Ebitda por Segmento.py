@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog as fd
 import pandas as pd
 from datetime import datetime
+from os.path import expanduser
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -63,6 +64,7 @@ class Ebitda:
         self.mes = Entry(self.tela_login, font=12, text='', bd=1)
         self.mes.place(x=80, y=400)
 
+        self.home = expanduser("~")
 
         Button(self.tela_login, font=('consolas', 11, 'bold'), width=20, height=2, fg='white', bg='#FF5733',
                border=1, text='GERAR RELATÓRIO', command=lambda: [self.formatar_dados(), self.completar_dados(),
@@ -70,20 +72,22 @@ class Ebitda:
                                         self.resumir_segmento(), self.formatar_consolidado()]).place(x=87, y=475)
 
     def abre_bal(self):
-        self.bal = fd.askopenfilename(title='Abrir arquivo', initialdir='\c:')
+        self.bal = fd.askopenfilename(title='Abrir arquivo', initialdir=self.home + '\Desktop')
         self.e1.delete(0, END)
         self.e1.insert(0, self.bal)
 
 
     def abre_desp(self):
-        self.despesas = fd.askopenfilename(title='Abrir arquivo', initialdir='\c:')
+        self.despesas = fd.askopenfilename(title='Abrir arquivo', initialdir=self.home + '\Desktop')
         self.e2.delete(0, END)
         self.e2.insert(0, self.despesas)
 
     def abre_driver(self):
-        self.driver = fd.askopenfilename(title='Abrir arquivo', initialdir='\c:')
+        self.driver = fd.askopenfilename(title='Abrir arquivo',
+                                     initialfile='G:\GECOT\Despesas por Segmento\DRIVERS de rateio por segmento.xlsx')
         self.e3.delete(0, END)
         self.e3.insert(0, self.driver)
+
 
     def formatar_dados(self):
         self.dados_inicio_1 = pd.read_excel(self.despesas)
@@ -98,6 +102,7 @@ class Ebitda:
         self.dados_inicio_1 = self.dados_inicio_1[self.dados_inicio_1['Data de lançamento'].notnull()]
         self.dados_inicio_2 = self.dados_inicio_1[self.dados_inicio_1['Centro custo'].isnull()]
         self.dados_inicio_2 = self.dados_inicio_2[~self.dados_inicio_2['Conta do Razão'].str.contains('6151124130')]
+        self.dados_inicio_2 = self.dados_inicio_2[~self.dados_inicio_2['Conta do Razão'].str.contains('6151124030')]
         self.dados_inicio_2['Ordem'] = self.dados_inicio_1['Ordem'].astype(str)
         self.dados_inicio_2.loc[self.dados_inicio_2['Ordem'].str.contains('100284'), 'Centro custo'] = '11400'
         self.dados_inicio_2.loc[self.dados_inicio_2['Ordem'].str.contains('100342'), 'Centro custo'] = '11500'
@@ -255,7 +260,8 @@ class Ebitda:
         self.balancete = self.balancete[self.balancete['Conta do Razão'].str.contains('|'.join(selecao_bal))]
         texto = {'GNC': 'Industrial', 'RESIDENCIAL': 'Residencial',
                  'INDUSTRIAL': 'Industrial', 'GNV': 'Gás Natural Veicular - GNV', 'COMERCIAL': 'Comercial',
-                 'PRIMA': 'Industrial', 'MAT.PRIMA': 'Industrial', '-MAP.PRIMA': 'Industrial'}
+                 'PRIMA': 'Industrial', 'MAT.PRIMA': 'Industrial', '-MAP.PRIMA': 'Industrial',
+                 'REFRIGERAÇÃO': 'Industrial', 'REFRIGERAÇAO': 'Industrial'}
         for i, j in texto.items():
             self.balancete['Segmento'] = self.balancete['Segmento'].replace(i, j)
         self.balancete.rename(
@@ -293,7 +299,7 @@ class Ebitda:
         self.datanova.loc['TOTAL GERAL'] = self.datanova.iloc[:, 1:].sum(axis=0)
 
     def formatar_consolidado(self):
-        writer = pd.ExcelWriter('C:/Users/leandro/Downloads/pronta' + self.mes_arquivo + '.xlsx',
+        writer = pd.ExcelWriter('G:\GECOT\Despesas por Segmento\Despesas por Segmento ' + self.mes_arquivo + '.xlsx',
                                 engine='xlsxwriter')
         item = pd.DataFrame(self.tabela_pronta)
         item.rename(columns={'Montante em moeda interna': 'Montante'}, inplace=True)
