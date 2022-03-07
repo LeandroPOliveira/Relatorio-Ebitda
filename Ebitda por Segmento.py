@@ -1,9 +1,10 @@
 from tkinter import *
-import tkinter as tk
-from tkinter import filedialog as fd
+from tkinter import ttk, messagebox, filedialog as fd
+import tkinter
 import pandas as pd
 from datetime import datetime
 from os.path import expanduser
+import threading
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -27,7 +28,8 @@ class Ebitda:
             j = j+10
             r = r+1
 
-        Frame(self.tela_login, width=600, height=500, bg='white').place(x=50, y=50)
+        self.frame1 = Frame(self.tela_login, width=600, height=500, bg='white')
+        self.frame1.place(x=50, y=50)
 
         #label
         l1 = Label(self.tela_login, text='Balancete', bg='white')
@@ -66,10 +68,32 @@ class Ebitda:
 
         self.home = expanduser("~")
 
-        Button(self.tela_login, font=('consolas', 11, 'bold'), width=20, height=2, fg='white', bg='#FF5733',
-               border=1, text='GERAR RELATÓRIO', command=lambda: [self.formatar_dados(), self.completar_dados(),
+        self.progress_frame = Frame(self.tela_login, width=400, height=200, bg='azure', bd=3, relief=RIDGE)
+        self.texto = Label(self.progress_frame, text='Gerando Relatório', font=('Goudy old style', 12, 'bold'), bd=0). \
+            place(x=120, y=60)
+        self.pb = ttk.Progressbar(self.progress_frame, mode='indeterminate', length=280)
+        self.pb.place(x=50, y=100)
+
+        def start_foo_thread(ev):
+            self.foo_thread = threading.Thread(target=lambda: [self.formatar_dados(), self.completar_dados(),
                     self.definir_rateios(), self.rateio_por_segmento(), self.unir_com_balancete(),
-                                        self.resumir_segmento(), self.formatar_consolidado()]).place(x=87, y=475)
+                                        self.resumir_segmento(), self.formatar_consolidado()])
+            self.foo_thread.daemon = True
+            self.progress_frame.place(x=150, y=200)
+            self.pb.start()
+            self.foo_thread.start()
+            self.tela_login.after(20, check_foo_thread)
+
+        def check_foo_thread():
+            if self.foo_thread.is_alive():
+                self.tela_login.after(20, check_foo_thread)
+            else:
+                self.pb.stop()
+                self.progress_frame.place_forget()
+                tkinter.messagebox.showinfo('', 'Relatório Gerado com Sucesso!')
+
+        Button(self.tela_login, font=('consolas', 11, 'bold'), width=20, height=2, fg='white', bg='#FF5733',
+               border=1, text='GERAR RELATÓRIO', command=lambda: start_foo_thread(None)).place(x=87, y=475)
 
     def abre_bal(self):
         self.bal = fd.askopenfilename(title='Abrir arquivo', initialdir=self.home + '\Desktop')
@@ -84,7 +108,7 @@ class Ebitda:
 
     def abre_driver(self):
         self.driver = fd.askopenfilename(title='Abrir arquivo',
-                                     initialfile='G:\GECOT\Despesas por Segmento\DRIVERS de rateio por segmento.xlsx')
+                                     initialdir='G:\GECOT\Despesas por Segmento\\')
         self.e3.delete(0, END)
         self.e3.insert(0, self.driver)
 
@@ -261,7 +285,8 @@ class Ebitda:
         texto = {'GNC': 'Industrial', 'RESIDENCIAL': 'Residencial',
                  'INDUSTRIAL': 'Industrial', 'GNV': 'Gás Natural Veicular - GNV', 'COMERCIAL': 'Comercial',
                  'PRIMA': 'Industrial', 'MAT.PRIMA': 'Industrial', '-MAP.PRIMA': 'Industrial',
-                 'REFRIGERAÇÃO': 'Industrial', 'REFRIGERAÇAO': 'Industrial'}
+                 'REFRIGERAÇÃO': 'Industrial', 'REFRIGERAÇAO': 'Industrial', 'DISTRIBUIDA': 'Residencial',
+                 'GER.DISTRIBUIDA': 'Residencial'}
         for i, j in texto.items():
             self.balancete['Segmento'] = self.balancete['Segmento'].replace(i, j)
         self.balancete.rename(
@@ -334,6 +359,7 @@ class Ebitda:
         worksheet_segmento.set_column('B:B', 17, format_numero)
 
         writer.save()
+
 
 
 tela_login = Tk()
