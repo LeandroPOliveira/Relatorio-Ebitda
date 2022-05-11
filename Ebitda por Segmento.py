@@ -170,7 +170,6 @@ class Ebitda:
                                           how='left')
         check = self.dados_a_completar[self.dados_a_completar['Cód. '].isnull()]
         check.to_excel('erros.xlsx')
-        print(check)
         self.dados_a_completar = self.dados_a_completar[self.dados_a_completar['Cód. '].notnull()]
         del self.dados_a_completar['busca']
         del self.dados_a_completar['Tipo de documento']
@@ -313,6 +312,7 @@ class Ebitda:
                 self.balancete_rateado = self.balancete_rateado.append(self.balancete.loc[[index]])
         self.tabela_pronta = pd.concat([self.tabela_pronta, self.balancete_rateado]).fillna(0)
         self.tabela_pronta['Montante em moeda interna'] = self.tabela_pronta['Montante em moeda interna'] * -1
+        self.tabela_pronta.to_excel('teste2.xlsx')
 
 
     def resumir_segmento(self):
